@@ -17,15 +17,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.wen.project.common.BaseCode.INTERNAL_ERROR;
-import static com.wen.project.common.BaseCode.PARAMS_NULL_ERROR;
+import static com.wen.project.common.BaseCode.*;
 
 /**
  * @author wen
  */
 @RestController
 @RequestMapping("/interface")
-@CrossOrigin(origins = { "http://localhost:8000/" }, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:8000/"}, allowCredentials = "true")
 public class InterfaceInfoController {
 
     @Resource
@@ -35,7 +34,7 @@ public class InterfaceInfoController {
      * 添加接口
      *
      * @param interfaceAddRequest 请求参数
-     * @param request 请求信息
+     * @param request             请求信息
      * @return 添加后的 id
      */
     @PostMapping("/add")
@@ -45,6 +44,7 @@ public class InterfaceInfoController {
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         BeanUtils.copyProperties(interfaceAddRequest, interfaceInfo);
+/*        interfaceInfo.setUserId(1L);*/
         boolean res = interfaceInfoService.save(interfaceInfo);
         if (!res) {
             throw new BusinessException(INTERNAL_ERROR);
@@ -56,7 +56,7 @@ public class InterfaceInfoController {
      * 删除接口
      *
      * @param deleteRequest 请求参数
-     * @param request 请求信息
+     * @param request       请求信息
      * @return 是否删除成功
      */
     @PostMapping("/delete")
@@ -71,7 +71,7 @@ public class InterfaceInfoController {
      * 更新接口信息
      *
      * @param interfaceUpdateRequest 请求参数
-     * @param request 请求信息
+     * @param request                请求信息
      * @return 是否更新成功
      */
     @PostMapping("/update")
@@ -81,14 +81,18 @@ public class InterfaceInfoController {
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         BeanUtils.copyProperties(interfaceUpdateRequest, interfaceInfo);
-        return ReturnUtil.success(interfaceInfoService.updateById(interfaceInfo));
+        boolean res = interfaceInfoService.updateById(interfaceInfo);
+        if (!res) {
+            throw new BusinessException(PARAMS_ERROR, "查询接口失败");
+        }
+        return ReturnUtil.success(true);
     }
 
     /**
      * 查询接口
      *
      * @param interfaceSearchRequest 请求参数
-     * @param request 请求信息
+     * @param request                请求信息
      * @return 接口列表
      */
     @GetMapping("/search")
@@ -98,26 +102,44 @@ public class InterfaceInfoController {
         }
         QueryWrapper<InterfaceInfo> interfaceInfoQueryWrapper = new QueryWrapper<>();
         Long id = interfaceSearchRequest.getId();
-        interfaceInfoQueryWrapper.eq("id", id);
+        if (id != null) {
+            interfaceInfoQueryWrapper.eq("id", id);
+        }
         String name = interfaceSearchRequest.getName();
-        interfaceInfoQueryWrapper.like("name", name);
+        if (name != null) {
+            interfaceInfoQueryWrapper.like("name", name);
+        }
         String description = interfaceSearchRequest.getDescription();
-        interfaceInfoQueryWrapper.like("description", description);
-        String userId = interfaceSearchRequest.getUserId();
-        interfaceInfoQueryWrapper.eq("userId", userId);
+        if (description != null) {
+            interfaceInfoQueryWrapper.like("description", description);
+        }
+        Long userId = interfaceSearchRequest.getUserId();
+        if (userId != null) {
+            interfaceInfoQueryWrapper.eq("userId", userId);
+        }
         String url = interfaceSearchRequest.getUrl();
-        interfaceInfoQueryWrapper.like("url", url);
+        if (url != null) {
+            interfaceInfoQueryWrapper.like("url", url);
+        }
         String method = interfaceSearchRequest.getMethod();
-        interfaceInfoQueryWrapper.eq("method", method);
+        if (method != null) {
+            interfaceInfoQueryWrapper.eq("method", method);
+        }
         String requestHeader = interfaceSearchRequest.getRequestHeader();
-        interfaceInfoQueryWrapper.like("requestHeader", requestHeader);
+        if (requestHeader != null) {
+            interfaceInfoQueryWrapper.like("requestHeader", requestHeader);
+        }
         String responseHeader = interfaceSearchRequest.getResponseHeader();
-        interfaceInfoQueryWrapper.like("responseHeader", responseHeader);
+        if (responseHeader != null) {
+            interfaceInfoQueryWrapper.like("responseHeader", responseHeader);
+        }
         Integer status = interfaceSearchRequest.getStatus();
-        interfaceInfoQueryWrapper.eq("status", status);
-        return ReturnUtil.success(interfaceInfoService.list(interfaceInfoQueryWrapper));
+        if (status != null) {
+            interfaceInfoQueryWrapper.eq("status", status);
+        }
+        List<InterfaceInfo> interfaceInfoList = interfaceInfoService.list(interfaceInfoQueryWrapper);
+        return ReturnUtil.success(interfaceInfoList);
     }
-
 
 
 }

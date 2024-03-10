@@ -30,7 +30,7 @@ public class InterfaceSearchRequest implements Serializable {
     /**
      * 创建人 ID
      */
-    private String userId;
+    private Long userId;
 
     /**
      * 接口地址

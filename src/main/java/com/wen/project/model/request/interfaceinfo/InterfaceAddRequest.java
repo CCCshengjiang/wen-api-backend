@@ -19,6 +19,11 @@ public class InterfaceAddRequest implements Serializable {
     private String name;
 
     /**
+     * 创建者id
+     */
+    private Long userId;
+
+    /**
      * 接口描述
      */
     private String description;

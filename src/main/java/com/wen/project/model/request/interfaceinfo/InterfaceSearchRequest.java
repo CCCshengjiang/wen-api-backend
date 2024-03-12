@@ -20,12 +20,12 @@ public class InterfaceSearchRequest implements Serializable {
     /**
      * 接口名称
      */
-    private String name;
+    private String interfaceName;
 
     /**
      * 接口描述
      */
-    private String description;
+    private String interfaceDescription;
 
     /**
      * 创建人 ID
@@ -35,12 +35,17 @@ public class InterfaceSearchRequest implements Serializable {
     /**
      * 接口地址
      */
-    private String url;
+    private String interfaceUrl;
 
     /**
      * 请求类型
      */
-    private String method;
+    private String interfaceMethod;
+
+    /**
+     * 请求参数
+     */
+    private String requestParams;
 
     /**
      * 请求头
@@ -55,7 +60,7 @@ public class InterfaceSearchRequest implements Serializable {
     /**
      * 接口状态
      */
-    private Integer status;
+    private Integer interfaceStatus;
 
     @Serial
     private static final long serialVersionUID = -4101547925360839551L;

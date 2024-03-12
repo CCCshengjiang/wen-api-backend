@@ -16,7 +16,7 @@ public class InterfaceAddRequest implements Serializable {
     /**
      * 接口名称
      */
-    private String name;
+    private String interfaceName;
 
     /**
      * 创建者id
@@ -26,17 +26,22 @@ public class InterfaceAddRequest implements Serializable {
     /**
      * 接口描述
      */
-    private String description;
+    private String interfaceDescription;
 
     /**
      * 接口地址
      */
-    private String url;
+    private String interfaceUrl;
 
     /**
      * 请求类型
      */
-    private String method;
+    private String interfaceMethod;
+
+    /**
+     * 请求参数
+     */
+    private String requestParams;
 
     /**
      * 请求头

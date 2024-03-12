@@ -1,5 +1,7 @@
 package com.wen.project.service.impl;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -85,6 +87,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setUserPassword(encryptPassword);
         user.setUserAccount(userAccount);
+        // 初始化密钥
+        String accessKey = DigestUtil.md5Hex(SALT + userAccount + RandomUtil.randomNumbers(5));
+        String secretKey = DigestUtil.md5Hex(userAccount + SALT + RandomUtil.randomNumbers(8));
+        user.setAccessKey(accessKey);
+        user.setSecretKey(secretKey);
         // 设置初始头像和初始标签
         user.setAvatarUrl("https://img1.baidu.com/it/u=2985396150,1670050748&fm=253&app=120&size=w931&n=0&f=JPEG&fmt=auto?sec=1710003600&t=5293756f92c3a6922e0540ee28503bfd");
         user.setTags("[\"开心\"]");

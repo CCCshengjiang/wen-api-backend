@@ -1,23 +1,38 @@
 package com.wen.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.gson.Gson;
 import com.wen.project.common.BaseResponse;
 import com.wen.project.common.request.DeleteRequest;
+import com.wen.project.common.request.IdRequest;
+import com.wen.project.common.request.PageRequest;
 import com.wen.project.common.utils.ReturnUtil;
+import com.wen.project.constant.InterfaceConstant;
 import com.wen.project.exception.BusinessException;
 import com.wen.project.model.domain.InterfaceInfo;
+import com.wen.project.model.domain.User;
 import com.wen.project.model.request.interfaceinfo.InterfaceAddRequest;
+import com.wen.project.model.request.interfaceinfo.InterfaceInvokeRequest;
 import com.wen.project.model.request.interfaceinfo.InterfaceSearchRequest;
 import com.wen.project.model.request.interfaceinfo.InterfaceUpdateRequest;
 import com.wen.project.service.InterfaceInfoService;
+import com.wen.project.service.UserService;
+import com.wen.wenapiclient.WenApiClientConfig;
+import com.wen.wenapiclient.client.WenApiClient;
+import com.wen.wenapiclient.model.UserInClient;
+import io.swagger.v3.core.util.Json;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 import static com.wen.project.common.BaseCode.*;
+import static com.wen.project.constant.InterfaceConstant.INTERFACE_OFFLINE;
+import static com.wen.project.constant.UserConstant.USER_LOGIN_STATUS;
 
 /**
  * @author wen
@@ -29,6 +44,12 @@ public class InterfaceInfoController {
 
     @Resource
     private InterfaceInfoService interfaceInfoService;
+
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private WenApiClient wenApiClient;
 
     /**
      * 添加接口
@@ -105,11 +126,11 @@ public class InterfaceInfoController {
         if (id != null) {
             interfaceInfoQueryWrapper.eq("id", id);
         }
-        String name = interfaceSearchRequest.getName();
+        String name = interfaceSearchRequest.getInterfaceName();
         if (name != null) {
             interfaceInfoQueryWrapper.like("name", name);
         }
-        String description = interfaceSearchRequest.getDescription();
+        String description = interfaceSearchRequest.getInterfaceDescription();
         if (description != null) {
             interfaceInfoQueryWrapper.like("description", description);
         }
@@ -117,11 +138,11 @@ public class InterfaceInfoController {
         if (userId != null) {
             interfaceInfoQueryWrapper.eq("userId", userId);
         }
-        String url = interfaceSearchRequest.getUrl();
+        String url = interfaceSearchRequest.getInterfaceUrl();
         if (url != null) {
             interfaceInfoQueryWrapper.like("url", url);
         }
-        String method = interfaceSearchRequest.getMethod();
+        String method = interfaceSearchRequest.getInterfaceMethod();
         if (method != null) {
             interfaceInfoQueryWrapper.eq("method", method);
         }
@@ -133,7 +154,7 @@ public class InterfaceInfoController {
         if (responseHeader != null) {
             interfaceInfoQueryWrapper.like("responseHeader", responseHeader);
         }
-        Integer status = interfaceSearchRequest.getStatus();
+        Integer status = interfaceSearchRequest.getInterfaceStatus();
         if (status != null) {
             interfaceInfoQueryWrapper.eq("status", status);
         }
@@ -141,5 +162,109 @@ public class InterfaceInfoController {
         return ReturnUtil.success(interfaceInfoList);
     }
 
+    /**
+     * 接口发布
+     *
+     * @param idRequest 请求参数
+     * @param request 请求信息
+     * @return 是否发布成功
+     */
+    @PostMapping("/online")
+    public BaseResponse<Boolean> onlineInterface(@RequestBody IdRequest idRequest, HttpServletRequest request) {
+        if (idRequest == null || request == null) {
+            throw new BusinessException(PARAMS_NULL_ERROR);
+        }
+        Long id = idRequest.getId();
+        if (id < 0) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        UserInClient user = new UserInClient();
+        user.setUsername("admin");
+        String nameByPost = wenApiClient.getUsernameByPost(user);
+        if (StringUtils.isAnyBlank(nameByPost)) {
+            throw new BusinessException(ACCESS_DENIED);
+        }
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setInterfaceStatus(InterfaceConstant.INTERFACE_ONLINE);
+        boolean res = interfaceInfoService.updateById(interfaceInfo);
+        return ReturnUtil.success(res);
+    }
+
+    /**
+     * 接口下线
+     *
+     * @param idRequest 请求参数
+     * @param request 请求信息
+     * @return 是否下线成功
+     */
+    @PostMapping("/offline")
+    public BaseResponse<Boolean> offlineInterface(@RequestBody IdRequest idRequest, HttpServletRequest request) {
+        if (idRequest == null || request == null) {
+            throw new BusinessException(PARAMS_NULL_ERROR);
+        }
+        Long id = idRequest.getId();
+        if (id < 0) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setInterfaceStatus(INTERFACE_OFFLINE);
+        boolean res = interfaceInfoService.updateById(interfaceInfo);
+        return ReturnUtil.success(res);
+    }
+
+    @GetMapping("/list")
+    public BaseResponse<Page<InterfaceInfo>> listInterfaceByPage(PageRequest pageRequest, HttpServletRequest request) {
+        int pageNum = pageRequest.getCurrent();
+        int pageSize = pageRequest.getPageSize();
+        Page<InterfaceInfo> interfaceInfoList = interfaceInfoService.page(new Page<InterfaceInfo>(pageNum, pageSize));
+        return ReturnUtil.success(interfaceInfoList);
+    }
+
+
+    @GetMapping("/get")
+    public BaseResponse<InterfaceInfo> searchInterfaceById(IdRequest idRequest, HttpServletRequest request) {
+        if (idRequest == null || request == null) {
+            throw new BusinessException(PARAMS_NULL_ERROR);
+        }
+        Long id = idRequest.getId();
+        if (id == null || id < 0) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        InterfaceInfo interfaceInfoList = interfaceInfoService.getById(id);
+        return ReturnUtil.success(interfaceInfoList);
+    }
+
+    @PostMapping("/invoke")
+    public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInvokeRequest interfaceInvokeRequest, HttpServletRequest request) {
+        if (interfaceInvokeRequest == null || request == null) {
+            throw new BusinessException(PARAMS_NULL_ERROR);
+        }
+        Long id = interfaceInvokeRequest.getId();
+        if (id == null || id < 0) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (interfaceInfo == null) {
+            throw new BusinessException(PARAMS_ERROR, "接口不存在");
+        }
+        // 判断接口状态
+        if (interfaceInfo.getInterfaceStatus().equals(INTERFACE_OFFLINE)) {
+            throw new BusinessException(PARAMS_ERROR, "接口已关闭");
+        }
+        // 签名认证
+        String userRequestParams = interfaceInvokeRequest.getUserRequestParams();
+        User currentUser = (User) request.getSession().getAttribute(USER_LOGIN_STATUS);
+        String accessKey = currentUser.getAccessKey();
+        String secretKey = currentUser.getSecretKey();
+        WenApiClient tempClient = new WenApiClient(accessKey, secretKey);
+        // 参数转换为 Json 格式
+        UserInClient user = new UserInClient();
+        user.setUsername(userRequestParams);
+        // 向接口请求
+        String usernameByPost = tempClient.getUsernameByPost(user);
+        return ReturnUtil.success(usernameByPost);
+    }
 
 }

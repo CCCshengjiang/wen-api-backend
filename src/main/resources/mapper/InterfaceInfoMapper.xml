@@ -6,23 +6,25 @@
 
     <resultMap id="BaseResultMap" type="com.wen.project.model.domain.InterfaceInfo">
             <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="interfaceName" column="interface_name" jdbcType="VARCHAR"/>
+            <result property="interfaceDescription" column="interface_description" jdbcType="VARCHAR"/>
             <result property="userId" column="user_id" jdbcType="BIGINT"/>
-            <result property="url" column="url" jdbcType="VARCHAR"/>
-            <result property="method" column="method" jdbcType="VARCHAR"/>
+            <result property="interfaceUrl" column="interface_url" jdbcType="VARCHAR"/>
+            <result property="interfaceMethod" column="interface_method" jdbcType="VARCHAR"/>
+            <result property="requestParams" column="request_params" jdbcType="VARCHAR"/>
             <result property="requestHeader" column="request_header" jdbcType="VARCHAR"/>
             <result property="responseHeader" column="response_header" jdbcType="VARCHAR"/>
-            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="interfaceStatus" column="interface_status" jdbcType="TINYINT"/>
             <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
             <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,description,
-        user_id,url,method,
-        request_header,response_header,status,
-        create_time,update_time,is_deleted
+        id,interface_name,interface_description,
+        user_id,interface_url,interface_method,
+        request_params,request_header,response_header,
+        interface_status,create_time,update_time,
+        is_deleted
     </sql>
 </mapper>

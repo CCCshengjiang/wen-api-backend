@@ -72,12 +72,6 @@ public class User implements Serializable {
     private Date updateTime;
 
     /**
-     * 是否删除，0-未删除，1-删除
-     */
-    @TableLogic
-    private Integer isDelete;
-
-    /**
      * 用户角色，0-普通用户，1-管理员
      */
     private Integer userRole;
@@ -91,6 +85,22 @@ public class User implements Serializable {
      * 用户自我介绍
      */
     private String userProfile;
+
+    /**
+     * 标识签名
+     */
+    private String accessKey;
+
+    /**
+     * 密钥签名
+     */
+    private String secretKey;
+
+    /**
+     * 是否删除，0-未删除，1-删除
+     */
+    @TableLogic
+    private Integer isDelete;
 
     @Serial
     @TableField(exist = false)

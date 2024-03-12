@@ -78,6 +78,16 @@ public class SafetyUserVO implements Serializable {
      */
     private String userProfile;
 
+    /**
+     * 标识签名
+     */
+    private String accessKey;
+
+    /**
+     * 密钥签名
+     */
+    private String secretKey;
+
     @Serial
     private static final long serialVersionUID = 3552735414898353474L;
 }

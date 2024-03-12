@@ -14,9 +14,9 @@ import java.io.Serializable;
 public class PageRequest implements Serializable {
 
     /**
-     * 页码
+     * 当前页码
      */
-    protected int pageNum;
+    protected int current;
 
     /**
      * 每页的数量

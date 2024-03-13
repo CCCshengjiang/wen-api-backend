@@ -1,21 +1,34 @@
 package com.wen.wenapigateway;
 
 import com.wen.wenapiclient.util.SignUtil;
+import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.domain.User;
+import com.wen.wenapicommon.service.InnerInterfaceInfoService;
+import com.wen.wenapicommon.service.InnerUserInterfaceInfoService;
 import com.wen.wenapicommon.service.InnerUserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,15 +44,23 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
     private static final List<String> IP_WHITE_LIST = List.of("127.0.0.1");
 
     @Resource
-    private InnerUserService innerUserService;
+    private InnerUserService userService;
+
+    @Resource
+    private InnerInterfaceInfoService interfaceInfoService;
+
+    @Resource
+    private InnerUserInterfaceInfoService userInterfaceInfoService;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         //  1. 请求日志
         ServerHttpRequest request = exchange.getRequest();
         log.info("请求唯一标识：" + request.getId());
-        log.info("请求路径：" + request.getPath());
-        log.info("请求方法：" + request.getMethod());
+        String url = request.getPath().toString();
+        log.info("请求路径：" + url);
+        String method = request.getMethod().toString();
+        log.info("请求方法：" + method);
         log.info("服务器的 IP 地址：" + request.getLocalAddress());
         String remoteAddress = Objects.requireNonNull(request.getRemoteAddress()).getHostString();
         log.info("客户端的主机号：" + remoteAddress);
@@ -55,7 +76,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         String accessKey = headers.getFirst("accessKey");
         User invokeUser = null;
         try {
-            invokeUser = innerUserService.getInvokeUser(accessKey);
+            invokeUser = userService.getInvokeUser(accessKey);
         } catch (Exception e) {
             return handleNoAuth(response);
         }
@@ -72,17 +93,81 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         }
         String timeStamp = headers.getFirst("timeStamp");
         long currentTime = System.currentTimeMillis() / 1000;
-        final long FIVE_MINUTES = 60 * 5L;
-        if (timeStamp == null || (currentTime - Long.parseLong(timeStamp)) >= FIVE_MINUTES) {
+        final long fiveMinutes = 60 * 5L;
+        if (timeStamp == null || (currentTime - Long.parseLong(timeStamp)) >= fiveMinutes) {
             return handleNoAuth(response);
         }
         //  4. 请求的模拟接口是否存在
-        //  f. 请求转发，调用模拟接口
-        //  g. 响应日志
-        //  h. 调用成功，接口调用次数 + 1
-        //  i. 调用失败，返回一个规范的错误码
-        log.info("custom global filter");
-        return chain.filter(exchange);
+        InterfaceInfo interfaceInfo = null;
+        try {
+            interfaceInfo = interfaceInfoService.getInterfaceInfo(url, method);
+        } catch (Exception e) {
+            return handleInvokeError(response);
+        }
+        // 请求转发，调用模拟接口 + 响应日志
+        return handleResponse(exchange, chain, interfaceInfo.getId(), invokeUser.getId());
+    }
+
+
+    private Mono<Void> handleResponse(ServerWebExchange exchange, GatewayFilterChain chain,Long interfaceId, Long userId) {
+        try {
+            ServerHttpResponse originalResponse = exchange.getResponse();
+            DataBufferFactory bufferFactory = originalResponse.bufferFactory();
+            HttpStatusCode statusCode = originalResponse.getStatusCode();
+            if (statusCode != HttpStatus.OK) {
+                //降级处理返回数据
+                return chain.filter(exchange);
+            }
+            ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
+
+                @Override
+                public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
+                    if (body instanceof Flux) {
+                        Flux<? extends DataBuffer> fluxBody = Flux.from(body);
+                        return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
+                            //  5. 请求转发，调用模拟接口
+                            try {
+                                // 调用成功，接口调用次数 + 1
+                                userInterfaceInfoService.invokeCount(interfaceId, userId);
+                            } catch (Exception e) {
+                                log.error("invokeCount error", e);
+                            }
+
+                            // 合并多个流集合，解决返回体分段传输
+                            DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory();
+                            DataBuffer buff = dataBufferFactory.join(dataBuffers);
+                            byte[] content = new byte[buff.readableByteCount()];
+                            buff.read(content);
+                            DataBufferUtils.release(buff);//释放掉内存
+
+                            //排除Excel导出，不是application/json不打印。若请求是上传图片则在最上面判断。
+                            MediaType contentType = originalResponse.getHeaders().getContentType();
+                            if (!MediaType.APPLICATION_JSON.isCompatibleWith(contentType)) {
+                                return bufferFactory.wrap(content);
+                            }
+
+                            // 构建返回日志
+                            String joinData = new String(content);
+                            List<Object> rspArgs = new ArrayList<>();
+                            rspArgs.add(statusCode.value());
+                            rspArgs.add(exchange.getRequest().getURI());
+                            rspArgs.add(joinData);
+                            log.info("<-- {} {}\n{}", rspArgs.toArray());
+                            getDelegate().getHeaders().setContentLength(joinData.getBytes().length);
+                            return bufferFactory.wrap(joinData.getBytes());
+                        }));
+                    } else {
+                        log.error("<-- {} 响应code异常", getStatusCode());
+                    }
+                    return super.writeWith(body);
+                }
+            };
+            return chain.filter(exchange.mutate().response(decoratedResponse).build());
+
+        } catch (Exception e) {
+            log.error("gateway log exception.\n" + e);
+            return chain.filter(exchange);
+        }
     }
 
     /**
@@ -93,6 +178,17 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
      */
     private Mono<Void> handleNoAuth(ServerHttpResponse response) {
         response.setStatusCode(HttpStatus.FORBIDDEN);
+        return response.setComplete();
+    }
+
+    /**
+     * 调用接口失败返回类
+     *
+     * @param response 请求信息
+     * @return 接口调用失败（500）
+     */
+    private Mono<Void> handleInvokeError(ServerHttpResponse response) {
+        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
         return response.setComplete();
     }
 

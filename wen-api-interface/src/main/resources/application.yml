@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: wen-api-interface
+  devtools:
+    livereload:
+      port: 35739
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+wen:
+  api:
+    client:
+      access-key: wen-api
+      secret-key: admin

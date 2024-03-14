@@ -3,20 +3,20 @@ package com.wen.wenapiproject.service.impl.inner;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wen.wenapicommon.common.BaseCode;
+import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.UserInterfaceInfo;
 import com.wen.wenapicommon.service.InnerUserInterfaceInfoService;
-import com.wen.wenapiproject.common.BaseCode;
-import com.wen.wenapiproject.exception.BusinessException;
 import com.wen.wenapiproject.mapper.UserInterfaceInfoMapper;
 import jakarta.annotation.Resource;
-import org.springframework.stereotype.Service;
+import org.apache.dubbo.config.annotation.DubboService;
 
 /**
  * 针对表【user_interface_info(用户——接口信息表)】的数据库操作Service实现
  *
  * @author wen
  */
-@Service
+@DubboService
 public class InnerUserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoMapper, UserInterfaceInfo>
     implements InnerUserInterfaceInfoService {
 
@@ -55,7 +55,7 @@ public class InnerUserInterfaceInfoServiceImpl extends ServiceImpl<UserInterface
         UpdateWrapper<UserInterfaceInfo> updateWrapper = new UpdateWrapper<>();
         updateWrapper.setSql("total_num = total_num + 1, balance_num = balance_num - 1")
                 .eq("interface_id", interfaceInfoId)
-                .eq("user_id", interfaceInfoId);
+                .eq("user_id", userId);
         return this.update(updateWrapper);
     }
 

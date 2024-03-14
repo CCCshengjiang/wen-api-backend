@@ -3,10 +3,10 @@ package com.wen.wenapiproject.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wen.wenapicommon.model.domain.User;
-import com.wen.wenapiproject.model.request.user.UserLoginRequest;
-import com.wen.wenapiproject.model.request.user.UserRegisterRequest;
-import com.wen.wenapiproject.model.request.user.UserSearchRequest;
-import com.wen.wenapiproject.model.request.user.UserUpdateRequest;
+import com.wen.wenapicommon.model.request.user.UserLoginRequest;
+import com.wen.wenapicommon.model.request.user.UserRegisterRequest;
+import com.wen.wenapicommon.model.request.user.UserSearchRequest;
+import com.wen.wenapicommon.model.request.user.UserUpdateRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;

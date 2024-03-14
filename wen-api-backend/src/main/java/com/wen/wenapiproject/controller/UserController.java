@@ -1,21 +1,20 @@
 package com.wen.wenapiproject.controller;
 
+import com.wen.wenapicommon.common.BaseCode;
+import com.wen.wenapicommon.common.BaseResponse;
+import com.wen.wenapicommon.common.utils.ReturnUtil;
+import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.User;
-import com.wen.wenapiproject.common.BaseResponse;
-import com.wen.wenapiproject.common.utils.ReturnUtil;
-import com.wen.wenapiproject.exception.BusinessException;
-import com.wen.wenapiproject.model.request.user.UserLoginRequest;
-import com.wen.wenapiproject.model.request.user.UserRegisterRequest;
-import com.wen.wenapiproject.model.request.user.UserSearchRequest;
-import com.wen.wenapiproject.model.request.user.UserUpdateRequest;
+import com.wen.wenapicommon.model.request.user.UserLoginRequest;
+import com.wen.wenapicommon.model.request.user.UserRegisterRequest;
+import com.wen.wenapicommon.model.request.user.UserSearchRequest;
+import com.wen.wenapicommon.model.request.user.UserUpdateRequest;
 import com.wen.wenapiproject.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import static com.wen.wenapiproject.common.BaseCode.*;
 
 
 /**
@@ -40,7 +39,7 @@ public class UserController {
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR, "输入为空");
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "输入为空");
         }
         Long id = userService.userRegister(userRegisterRequest);
         return ReturnUtil.success(id);
@@ -56,7 +55,7 @@ public class UserController {
     @PostMapping("/login")
     public BaseResponse<User> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         if (userLoginRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR, "输入为空");
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "输入为空");
         }
         User user = userService.userLogin(userLoginRequest, request);
         return ReturnUtil.success(user);
@@ -83,7 +82,7 @@ public class UserController {
     @PostMapping("logout")
     public BaseResponse<Integer> userLogout(HttpServletRequest request) {
         if (request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         Integer i = userService.userLogout(request);
         return ReturnUtil.success(i);
@@ -98,11 +97,11 @@ public class UserController {
     @GetMapping("/search")
     public BaseResponse<List<User>> userSearch(UserSearchRequest userSearchRequest, HttpServletRequest request) {
         if (userSearchRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         // 鉴权
         if (!userService.isAdmin(request)) {
-            throw new BusinessException(ACCESS_DENIED);
+            throw new BusinessException(BaseCode.ACCESS_DENIED);
         }
         // 查询用户
         List<User> users = userService.userSearch(userSearchRequest);
@@ -118,14 +117,14 @@ public class UserController {
     @PostMapping("/delete")
     public BaseResponse<Boolean> userDelete(@RequestBody long id, HttpServletRequest request) {
         if (request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         // 鉴权
         if (userService.isAdmin(request)) {
-            throw new BusinessException(ACCESS_DENIED);
+            throw new BusinessException(BaseCode.ACCESS_DENIED);
         }
         if (id <= 0) {
-            throw new BusinessException(RESOURCE_NOT_FOUND, "用户不存在");
+            throw new BusinessException(BaseCode.RESOURCE_NOT_FOUND, "用户不存在");
         }
         return ReturnUtil.success(userService.removeById(id));
     }
@@ -141,7 +140,7 @@ public class UserController {
     public BaseResponse<Integer> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
         // 判断参数是否为空
         if (userUpdateRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         // 修改用户
         int result = userService.updateUser(userUpdateRequest, request);

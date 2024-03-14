@@ -1,12 +1,12 @@
 package com.wen.wenapiproject.exception;
 
-import com.wen.wenapiproject.common.BaseResponse;
-import com.wen.wenapiproject.common.utils.ReturnUtil;
+import com.wen.wenapicommon.common.BaseCode;
+import com.wen.wenapicommon.common.BaseResponse;
+import com.wen.wenapicommon.common.utils.ReturnUtil;
+import com.wen.wenapicommon.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import static com.wen.wenapiproject.common.BaseCode.INTERNAL_ERROR;
 
 /**
  * 全局异常处理器
@@ -40,6 +40,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public <T> BaseResponse<T> runtimeExceptionHandler(RuntimeException e) {
         log.error("RuntimeException", e);
-        return ReturnUtil.error(INTERNAL_ERROR, e.getMessage());
+        return ReturnUtil.error(BaseCode.INTERNAL_ERROR, e.getMessage());
     }
 }

@@ -2,12 +2,13 @@ package com.wen.wenapiproject.service.impl.inner;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.wen.wenapicommon.common.BaseCode;
+import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.service.InnerInterfaceInfoService;
-import com.wen.wenapiproject.common.BaseCode;
-import com.wen.wenapiproject.exception.BusinessException;
 import com.wen.wenapiproject.mapper.InterfaceInfoMapper;
 import jakarta.annotation.Resource;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
  *
  * @author wen
  */
-@Service
+@DubboService
 public class InnerInterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, InterfaceInfo>
     implements InnerInterfaceInfoService {
 

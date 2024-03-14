@@ -2,25 +2,24 @@ package com.wen.wenapiproject.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wen.wenapicommon.common.BaseCode;
+import com.wen.wenapicommon.common.BaseResponse;
+import com.wen.wenapicommon.common.request.DeleteRequest;
+import com.wen.wenapicommon.common.request.IdRequest;
+import com.wen.wenapicommon.common.utils.ReturnUtil;
+import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.UserInterfaceInfo;
-import com.wen.wenapiproject.common.BaseResponse;
-import com.wen.wenapiproject.common.request.DeleteRequest;
-import com.wen.wenapiproject.common.request.IdRequest;
-import com.wen.wenapiproject.common.request.PageRequest;
-import com.wen.wenapiproject.common.utils.ReturnUtil;
-import com.wen.wenapiproject.exception.BusinessException;
-import com.wen.wenapiproject.model.request.userinterface.UserInterfaceAddRequest;
-import com.wen.wenapiproject.model.request.userinterface.UserInterfaceSearchRequest;
-import com.wen.wenapiproject.model.request.userinterface.UserInterfaceUpdateRequest;
+import com.wen.wenapicommon.model.request.userinterface.UserInterfaceAddRequest;
+import com.wen.wenapicommon.model.request.userinterface.UserInterfaceSearchRequest;
+import com.wen.wenapicommon.model.request.userinterface.UserInterfaceUpdateRequest;
 import com.wen.wenapiproject.service.UserInterfaceInfoService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import static com.wen.wenapiproject.common.BaseCode.*;
 
 /**
  * @author wen
@@ -43,14 +42,14 @@ public class UserInterfaceInfoController {
     @PostMapping("/add")
     public BaseResponse<Long> addUserInterface(@RequestBody UserInterfaceAddRequest userInterfaceAddRequest, HttpServletRequest request) {
         if (userInterfaceAddRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         UserInterfaceInfo userInterfaceInfo = new UserInterfaceInfo();
         BeanUtils.copyProperties(userInterfaceAddRequest, userInterfaceInfo);
 /*        interfaceInfo.setUserId(1L);*/
         boolean res = userInterfaceInfoService.save(userInterfaceInfo);
         if (!res) {
-            throw new BusinessException(INTERNAL_ERROR);
+            throw new BusinessException(BaseCode.INTERNAL_ERROR);
         }
         return ReturnUtil.success(userInterfaceInfo.getId());
     }
@@ -65,7 +64,7 @@ public class UserInterfaceInfoController {
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteUserInterface(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         return ReturnUtil.success(userInterfaceInfoService.removeById(deleteRequest.getId()));
     }
@@ -80,13 +79,13 @@ public class UserInterfaceInfoController {
     @PostMapping("/update")
     public BaseResponse<Boolean> updateUserInterface(@RequestBody UserInterfaceUpdateRequest userInterfaceUpdateRequest, HttpServletRequest request) {
         if (userInterfaceUpdateRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         UserInterfaceInfo userInterfaceInfo = new UserInterfaceInfo();
         BeanUtils.copyProperties(userInterfaceUpdateRequest, userInterfaceInfo);
         boolean res = userInterfaceInfoService.updateById(userInterfaceInfo);
         if (!res) {
-            throw new BusinessException(PARAMS_ERROR, "查询接口失败");
+            throw new BusinessException(BaseCode.PARAMS_ERROR, "查询接口失败");
         }
         return ReturnUtil.success(true);
     }
@@ -101,7 +100,7 @@ public class UserInterfaceInfoController {
     @GetMapping("/search")
     public BaseResponse<List<UserInterfaceInfo>> searchUserInterface(UserInterfaceSearchRequest userInterfaceSearchRequest, HttpServletRequest request) {
         if (userInterfaceSearchRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         QueryWrapper<UserInterfaceInfo> interfaceInfoQueryWrapper = new QueryWrapper<>();
         Long id = userInterfaceSearchRequest.getId();
@@ -134,7 +133,7 @@ public class UserInterfaceInfoController {
 
     @GetMapping("/list")
     public BaseResponse<Page<UserInterfaceInfo>> listUserInterfaceByPage(PageRequest pageRequest, HttpServletRequest request) {
-        int pageNum = pageRequest.getCurrent();
+        int pageNum = pageRequest.getPageNumber();
         int pageSize = pageRequest.getPageSize();
         Page<UserInterfaceInfo> interfaceInfoList = userInterfaceInfoService.page(new Page<>(pageNum, pageSize));
         return ReturnUtil.success(interfaceInfoList);
@@ -144,11 +143,11 @@ public class UserInterfaceInfoController {
     @GetMapping("/get")
     public BaseResponse<UserInterfaceInfo> searchUserInterfaceById(IdRequest idRequest, HttpServletRequest request) {
         if (idRequest == null || request == null) {
-            throw new BusinessException(PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         Long id = idRequest.getId();
         if (id == null || id < 0) {
-            throw new BusinessException(PARAMS_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_ERROR);
         }
         UserInterfaceInfo interfaceInfoList = userInterfaceInfoService.getById(id);
         return ReturnUtil.success(interfaceInfoList);

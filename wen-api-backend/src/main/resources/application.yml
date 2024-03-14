@@ -26,6 +26,17 @@ server:
         domain: localhost
   address: 0.0.0.0
 
+# 配置 Dubbo 的应用名、Dubbo 协议信息、Dubbo 使用的注册中心地址
+dubbo:
+  application:
+    name: dubbo-wen-api-backend
+    qos-port: 22222
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: zookeeper://${zookeeper.address:127.0.0.1}:2181
+
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:
@@ -37,7 +48,7 @@ springdoc:
   group-configs:
     - group: 'wen-api'
       paths-to-match: '/**'
-      packages-to-scan: com.wen.project.controller # 修改为自己的controller包路径
+      packages-to-scan: com.wen.wenapiproject.controller # 修改为自己的controller包路径
 
 # knife4j的增强配置，不需要增强可以不配
 knife4j:

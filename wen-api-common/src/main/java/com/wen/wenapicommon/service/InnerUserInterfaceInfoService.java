@@ -1,7 +1,5 @@
 package com.wen.wenapicommon.service;
 
-import com.wen.wenapicommon.model.domain.InterfaceInfo;
-
 /**
  * 内部服务：用户-接口信息操作
  *

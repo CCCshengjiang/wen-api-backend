@@ -37,5 +37,10 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.26</version>
         </dependency>
+        <dependency>
+            <groupId>com.wen</groupId>
+            <artifactId>wen-api-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 </project>

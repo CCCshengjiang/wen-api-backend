@@ -6,8 +6,8 @@ import com.wen.wenapicommon.model.domain.User;
 import com.wen.wenapicommon.service.InnerInterfaceInfoService;
 import com.wen.wenapicommon.service.InnerUserInterfaceInfoService;
 import com.wen.wenapicommon.service.InnerUserService;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -43,13 +43,13 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
 
     private static final List<String> IP_WHITE_LIST = List.of("127.0.0.1");
 
-    @Resource
+    @DubboReference
     private InnerUserService userService;
 
-    @Resource
+    @DubboReference
     private InnerInterfaceInfoService interfaceInfoService;
 
-    @Resource
+    @DubboReference
     private InnerUserInterfaceInfoService userInterfaceInfoService;
 
     @Override
@@ -72,12 +72,13 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         }
         //  3. 用户鉴权
         // 从请求头中获取参数信息,先判断 aK 和 sK
-        HttpHeaders headers = response.getHeaders();
+        HttpHeaders headers = request.getHeaders();
         String accessKey = headers.getFirst("accessKey");
         User invokeUser = null;
         try {
             invokeUser = userService.getInvokeUser(accessKey);
         } catch (Exception e) {
+            log.error("getInvokeUser 获取参数信息异常" + e.getMessage());
             return handleNoAuth(response);
         }
         String sign = headers.getFirst("sign");
@@ -102,14 +103,24 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         try {
             interfaceInfo = interfaceInfoService.getInterfaceInfo(url, method);
         } catch (Exception e) {
+            log.error("getInterfaceInfo 请求的模拟接口异常" + e.getMessage());
             return handleInvokeError(response);
         }
-        // 请求转发，调用模拟接口 + 响应日志
-        return handleResponse(exchange, chain, interfaceInfo.getId(), invokeUser.getId());
+        // 调用模拟接口
+        //  5. 请求转发，调用模拟接口
+        try {
+            // 调用成功，接口调用次数 + 1
+            userInterfaceInfoService.invokeCount(interfaceInfo.getId(), invokeUser.getId());
+        } catch (Exception e) {
+            log.error("invokeCount 调用接口操作异常" + e.getMessage());
+            return handleInvokeError(response);
+        }
+        // 请求转发 + 响应日志
+        return handleResponse(exchange, chain);
     }
 
 
-    private Mono<Void> handleResponse(ServerWebExchange exchange, GatewayFilterChain chain,Long interfaceId, Long userId) {
+    private Mono<Void> handleResponse(ServerWebExchange exchange, GatewayFilterChain chain) {
         try {
             ServerHttpResponse originalResponse = exchange.getResponse();
             DataBufferFactory bufferFactory = originalResponse.bufferFactory();
@@ -119,33 +130,22 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
                 return chain.filter(exchange);
             }
             ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
-
                 @Override
                 public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
                     if (body instanceof Flux) {
                         Flux<? extends DataBuffer> fluxBody = Flux.from(body);
                         return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
-                            //  5. 请求转发，调用模拟接口
-                            try {
-                                // 调用成功，接口调用次数 + 1
-                                userInterfaceInfoService.invokeCount(interfaceId, userId);
-                            } catch (Exception e) {
-                                log.error("invokeCount error", e);
-                            }
-
                             // 合并多个流集合，解决返回体分段传输
                             DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory();
                             DataBuffer buff = dataBufferFactory.join(dataBuffers);
                             byte[] content = new byte[buff.readableByteCount()];
                             buff.read(content);
                             DataBufferUtils.release(buff);//释放掉内存
-
                             //排除Excel导出，不是application/json不打印。若请求是上传图片则在最上面判断。
                             MediaType contentType = originalResponse.getHeaders().getContentType();
                             if (!MediaType.APPLICATION_JSON.isCompatibleWith(contentType)) {
                                 return bufferFactory.wrap(content);
                             }
-
                             // 构建返回日志
                             String joinData = new String(content);
                             List<Object> rspArgs = new ArrayList<>();

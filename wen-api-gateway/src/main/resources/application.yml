@@ -3,6 +3,11 @@ server:
 spring:
   application:
     name: wen-api-gateway
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/wen_api # 自己数据库地址
+    username: root # 自己数据库用户名
+    password: 123456 # 自己数据库密码
   devtools:
     livereload:
       port: 35749
@@ -13,3 +18,14 @@ spring:
           uri: http://localhost:8123
           predicates:
             - Path=/api/**
+
+# 配置 Dubbo 的应用名、Dubbo 协议信息、Dubbo 使用的注册中心地址
+dubbo:
+  application:
+    name: dubbo-wen-api-gateway
+    qos-port: 22223
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: zookeeper://${zookeeper.address:127.0.0.1}:2181

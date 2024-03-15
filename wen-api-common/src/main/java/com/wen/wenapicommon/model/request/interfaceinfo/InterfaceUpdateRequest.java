@@ -53,11 +53,6 @@ public class InterfaceUpdateRequest implements Serializable {
      */
     private String responseHeader;
 
-    /**
-     * 接口状态
-     */
-    private Integer interfaceStatus;
-
     @Serial
     private static final long serialVersionUID = 6834109185337041250L;
 }

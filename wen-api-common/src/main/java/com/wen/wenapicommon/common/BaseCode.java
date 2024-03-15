@@ -12,6 +12,7 @@ public enum BaseCode {
     SUCCESS(20000, "Success", ""),
     PARAMS_ERROR(40000, "请求参数错误", ""),
     PARAMS_NULL_ERROR(40001, "请求参数为空", ""),
+    PARAMS_CONFLICT(40002, "信息未更改", ""),
     AUTH_FAILURE(40100, "登陆状态异常", ""),
     INVALID_PASSWORD_ERROR(40102, "无效密码", ""),
     ACCESS_DENIED(40300, "非管理员用户或权限不足", ""),

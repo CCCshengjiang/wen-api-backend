@@ -20,8 +20,6 @@ o
 ?src/main/java/com/wen/wenapicommon/common/utils/ReturnUtil.java,7\4\743009a2a2a0c91daaf789674aef09efab009c88
 s
 Csrc/main/java/com/wen/wenapicommon/exception/BusinessException.java,f\d\fd8f14fc4b59ffeef81cbb7a988f6b366c5b25ef
-x
-Hsrc/main/java/com/wen/wenapicommon/exception/GlobalExceptionHandler.java,b\4\b42c27bbd1ce378e5167b120f251d0dceddf4136
 k
 ;src/main/java/com/wen/wenapicommon/common/BaseResponse.java,f\a\fa511a73f9d8321cb4426c307945afc220d658af
 g
@@ -58,7 +56,3 @@ Lsrc/main/java/com/wen/wenapicommon/model/request/user/UserUpdateRequest.java,7
 ^src/main/java/com/wen/wenapicommon/model/request/userinterface/UserInterfaceSearchRequest.java,7\0\70d9c2fc91e846ce33f8b56fb7bba07c15298989
 Ž
 ^src/main/java/com/wen/wenapicommon/model/request/userinterface/UserInterfaceUpdateRequest.java,6\f\6f67561c98f4dee2189fa6cf541ca84640f7b073
-e
-5src/main/java/com/wen/wenapicommon/JacksonConfig.java,7\9\7937d3a96fdba02550c77380bfebb8996cab8839
-l
-<src/main/java/com/wen/wenapicommon/config/JacksonConfig.java,1\a\1ae84c9c3d9cfdaec64f6cb9c682083b68cc8731

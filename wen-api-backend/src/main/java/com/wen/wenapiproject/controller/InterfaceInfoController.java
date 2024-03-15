@@ -17,6 +17,7 @@ import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceAddRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceInvokeRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceSearchRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
+import com.wen.wenapiproject.annotation.AuthCheck;
 import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiproject.service.UserService;
 import com.wen.wenapiclient.client.WenApiClient;
@@ -52,6 +53,7 @@ public class InterfaceInfoController {
      * @param request             请求信息
      * @return 添加后的 id
      */
+    // TODO 添加接口，问题：到底要不要有这个实现？按照什么规范实现？
     @PostMapping("/add")
     public BaseResponse<Long> addInterface(@RequestBody InterfaceAddRequest interfaceAddRequest, HttpServletRequest request) {
         if (interfaceAddRequest == null || request == null) {
@@ -79,7 +81,11 @@ public class InterfaceInfoController {
         if (deleteRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
-        return ReturnUtil.success(interfaceInfoService.removeById(deleteRequest.getId()));
+        Long interfaceId = deleteRequest.getId();
+        if (interfaceId <= 0) {
+            throw new BusinessException(BaseCode.PARAMS_ERROR);
+        }
+        return ReturnUtil.success(interfaceInfoService.removeById(interfaceId));
     }
 
     /**
@@ -90,6 +96,7 @@ public class InterfaceInfoController {
      * @return 是否更新成功
      */
     @PostMapping("/update")
+    @AuthCheck
     public BaseResponse<Boolean> updateInterface(@RequestBody InterfaceUpdateRequest interfaceUpdateRequest, HttpServletRequest request) {
         if (interfaceUpdateRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
@@ -164,6 +171,7 @@ public class InterfaceInfoController {
      * @return 是否发布成功
      */
     @PostMapping("/online")
+    @AuthCheck
     public BaseResponse<Boolean> onlineInterface(@RequestBody IdRequest idRequest, HttpServletRequest request) {
         if (idRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);

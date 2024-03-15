@@ -16,6 +16,7 @@ import com.wen.wenapicommon.model.request.user.UserUpdateRequest;
 import com.wen.wenapiproject.mapper.UserMapper;
 import com.wen.wenapiproject.model.vo.SafetyUserVO;
 import com.wen.wenapiproject.service.UserService;
+import com.wen.wenapiproject.util.CurrentUserUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -157,14 +158,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public User getCurrentUser(HttpServletRequest request) {
         if (request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "请求信息为空");
         }
-        // 获取当前登录的用户信息
-        User currentUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATUS);
+        User currentUser = CurrentUserUtil.getCurrentUser(request);
         // 防止更新用户之后，返回的还是缓存中的用户信息
-        if (currentUser == null) {
-            throw new BusinessException(BaseCode.AUTH_FAILURE, "未登录或登录过期");
-        }
         currentUser = userMapper.selectById(currentUser.getId());
         return getSafetyUser(currentUser);
     }

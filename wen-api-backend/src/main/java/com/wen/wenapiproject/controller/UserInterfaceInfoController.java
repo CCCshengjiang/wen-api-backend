@@ -46,7 +46,7 @@ public class UserInterfaceInfoController {
         }
         UserInterfaceInfo userInterfaceInfo = new UserInterfaceInfo();
         BeanUtils.copyProperties(userInterfaceAddRequest, userInterfaceInfo);
-/*        interfaceInfo.setUserId(1L);*/
+
         boolean res = userInterfaceInfoService.save(userInterfaceInfo);
         if (!res) {
             throw new BusinessException(BaseCode.INTERNAL_ERROR);

@@ -19,7 +19,7 @@ public class PageUsersVO implements Serializable {
     /**
      * 脱敏的用户信息
      */
-    private List<User> safetyUsers;
+    private List<SafetyUserVO> safetyUsers;
 
     /**
      * 用户总量

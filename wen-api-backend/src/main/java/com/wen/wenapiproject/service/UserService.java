@@ -1,12 +1,12 @@
 package com.wen.wenapiproject.service;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wen.wenapicommon.model.domain.User;
 import com.wen.wenapicommon.model.request.user.UserLoginRequest;
 import com.wen.wenapicommon.model.request.user.UserRegisterRequest;
 import com.wen.wenapicommon.model.request.user.UserSearchRequest;
 import com.wen.wenapicommon.model.request.user.UserUpdateRequest;
+import com.wen.wenapiproject.model.vo.SafetyUserVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public interface UserService extends IService<User> {
      * @param request 请求
      * @return 返回脱敏的用户信息
      */
-    User userLogin(UserLoginRequest userLoginRequest, HttpServletRequest request);
+    SafetyUserVO userLogin(UserLoginRequest userLoginRequest, HttpServletRequest request);
 
     /**
      * 获取当前登陆的用户信息
@@ -41,7 +41,7 @@ public interface UserService extends IService<User> {
      * @param request http请求
      * @return 脱敏的用户信息
      */
-    User getCurrentUser(HttpServletRequest request);
+    SafetyUserVO getCurrentUser(HttpServletRequest request);
 
     /**
      * 用户退出登录
@@ -51,21 +51,6 @@ public interface UserService extends IService<User> {
      */
     Integer userLogout(HttpServletRequest request);
 
-    /**
-     * 判断是否为管理员（前端）
-     *
-     * @param request Http请求
-     * @return 是否是管理员
-     */
-    boolean isAdmin(HttpServletRequest request);
-
-    /**
-     * 判断用户是否为管理员（当前用户）
-     *
-     * @param currentUser 当前用户
-     * @return 是否为管理员
-     */
-    boolean isAdmin(User currentUser);
 
     /**
      * 查询用户接口
@@ -73,7 +58,7 @@ public interface UserService extends IService<User> {
      * @param userSearchRequest 用户查询请求体
      * @return 返回脱敏的用户列表
      */
-    List<User> userSearch(UserSearchRequest userSearchRequest);
+    List<SafetyUserVO> userSearch(UserSearchRequest userSearchRequest);
 
     /**
      * 修改用户信息的业务接口
@@ -87,18 +72,10 @@ public interface UserService extends IService<User> {
     /**
      * 用户脱敏的业务层接口
      *
-     * @param userPageList 分页的用户列表
-     * @return 脱敏的用户分页列表
-     */
-    List<User> getSafetyUser(Page<User> userPageList);
-
-    /**
-     * 用户脱敏的业务层接口
-     *
      * @param userList 用户列表
      * @return 脱敏的用户信息
      */
-    List<User> getSafetyUser(List<User> userList);
+    List<SafetyUserVO> getSafetyUser(List<User> userList);
 
     /**
      * 用户脱敏的业务层接口
@@ -106,5 +83,5 @@ public interface UserService extends IService<User> {
      * @param originUser 原始的用户信息
      * @return 脱敏的用户
      */
-    User getSafetyUser(User originUser);
+    SafetyUserVO getSafetyUser(User originUser);
 }

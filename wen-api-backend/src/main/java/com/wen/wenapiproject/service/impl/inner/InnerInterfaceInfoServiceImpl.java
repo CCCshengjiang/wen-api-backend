@@ -9,7 +9,6 @@ import com.wen.wenapicommon.service.InnerInterfaceInfoService;
 import com.wen.wenapiproject.mapper.InterfaceInfoMapper;
 import jakarta.annotation.Resource;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.stereotype.Service;
 
 /**
  * 针对表【interface_info(接口信息表)】的数据库操作Service实现

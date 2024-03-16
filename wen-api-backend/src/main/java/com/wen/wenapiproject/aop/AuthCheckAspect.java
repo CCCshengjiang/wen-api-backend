@@ -1,7 +1,6 @@
 package com.wen.wenapiproject.aop;
 
 import com.wen.wenapicommon.common.BaseCode;
-import com.wen.wenapicommon.constant.UserConstant;
 import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.User;
 import com.wen.wenapiproject.annotation.AuthCheck;
@@ -33,7 +32,7 @@ public class AuthCheckAspect {
      */
     @Around("@annotation(authCheck)")
     public Object authCheckAdvice(ProceedingJoinPoint joinPoint, AuthCheck authCheck) throws Throwable {
-        HttpServletRequest request = null;
+        HttpServletRequest request;
         try {
             RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
             request = ((ServletRequestAttributes) requestAttributes).getRequest();
@@ -47,6 +46,5 @@ public class AuthCheckAspect {
         // 权限校验通过，放行
         return joinPoint.proceed();
     }
-
 
 }

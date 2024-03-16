@@ -13,18 +13,15 @@ import com.wen.wenapicommon.constant.UserConstant;
 import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.domain.User;
-import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceAddRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceInvokeRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceSearchRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
 import com.wen.wenapiproject.annotation.AuthCheck;
 import com.wen.wenapiproject.service.InterfaceInfoService;
-import com.wen.wenapiproject.service.UserService;
 import com.wen.wenapiclient.client.WenApiClient;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,33 +38,9 @@ public class InterfaceInfoController {
     private InterfaceInfoService interfaceInfoService;
 
     @Resource
-    private UserService userService;
-
-    @Resource
     private WenApiClient wenApiClient;
 
-    /**
-     * 添加接口
-     *
-     * @param interfaceAddRequest 请求参数
-     * @param request             请求信息
-     * @return 添加后的 id
-     */
-    // TODO 添加接口，问题：到底要不要有这个实现？按照什么规范实现？
-    @PostMapping("/add")
-    public BaseResponse<Long> addInterface(@RequestBody InterfaceAddRequest interfaceAddRequest, HttpServletRequest request) {
-        if (interfaceAddRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        InterfaceInfo interfaceInfo = new InterfaceInfo();
-        BeanUtils.copyProperties(interfaceAddRequest, interfaceInfo);
-        /*        interfaceInfo.setUserId(1L);*/
-        boolean res = interfaceInfoService.save(interfaceInfo);
-        if (!res) {
-            throw new BusinessException(BaseCode.INTERNAL_ERROR);
-        }
-        return ReturnUtil.success(interfaceInfo.getId());
-    }
+    // region 增删改查
 
     /**
      * 删除接口
@@ -101,17 +74,33 @@ public class InterfaceInfoController {
         if (interfaceUpdateRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
-        InterfaceInfo interfaceInfo = new InterfaceInfo();
-        BeanUtils.copyProperties(interfaceUpdateRequest, interfaceInfo);
-        boolean res = interfaceInfoService.updateById(interfaceInfo);
-        if (!res) {
-            throw new BusinessException(BaseCode.PARAMS_ERROR, "查询接口失败");
+        return ReturnUtil.success(interfaceInfoService.updateInterface(interfaceUpdateRequest, request));
+    }
+
+    @GetMapping("/list")
+    public BaseResponse<Page<InterfaceInfo>> listInterfaceByPage(PageRequest pageRequest, HttpServletRequest request) {
+        int pageNum = pageRequest.getCurrent();
+        int pageSize = pageRequest.getPageSize();
+        Page<InterfaceInfo> interfaceInfoList = interfaceInfoService.page(new Page<>(pageNum, pageSize));
+        return ReturnUtil.success(interfaceInfoList);
+    }
+
+
+    @GetMapping("/get")
+    public BaseResponse<InterfaceInfo> searchInterfaceById(IdRequest idRequest, HttpServletRequest request) {
+        if (idRequest == null || request == null) {
+            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
-        return ReturnUtil.success(true);
+        Long id = idRequest.getId();
+        if (id == null || id < 0) {
+            throw new BusinessException(BaseCode.PARAMS_ERROR);
+        }
+        InterfaceInfo interfaceInfoList = interfaceInfoService.getById(id);
+        return ReturnUtil.success(interfaceInfoList);
     }
 
     /**
-     * 查询接口
+     * 仅管理员查询接口
      *
      * @param interfaceSearchRequest 请求参数
      * @param request                请求信息
@@ -216,27 +205,6 @@ public class InterfaceInfoController {
         return ReturnUtil.success(res);
     }
 
-    @GetMapping("/list")
-    public BaseResponse<Page<InterfaceInfo>> listInterfaceByPage(PageRequest pageRequest, HttpServletRequest request) {
-        int pageNum = pageRequest.getCurrent();
-        int pageSize = pageRequest.getPageSize();
-        Page<InterfaceInfo> interfaceInfoList = interfaceInfoService.page(new Page<>(pageNum, pageSize));
-        return ReturnUtil.success(interfaceInfoList);
-    }
-
-
-    @GetMapping("/get")
-    public BaseResponse<InterfaceInfo> searchInterfaceById(IdRequest idRequest, HttpServletRequest request) {
-        if (idRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        Long id = idRequest.getId();
-        if (id == null || id < 0) {
-            throw new BusinessException(BaseCode.PARAMS_ERROR);
-        }
-        InterfaceInfo interfaceInfoList = interfaceInfoService.getById(id);
-        return ReturnUtil.success(interfaceInfoList);
-    }
 
     @PostMapping("/invoke")
     public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInvokeRequest interfaceInvokeRequest, HttpServletRequest request) {
@@ -266,12 +234,14 @@ public class InterfaceInfoController {
         user.setUsername(userRequestParams);
         // 向接口请求
         String usernameByPost = tempClient.getUsernameByPost(user);
-/*        try {
-
-        } catch (Exception e) {
-            throw new BusinessException(BaseCode.RESOURCE_NOT_FOUND,"后端返回异常");
-        }*/
         return ReturnUtil.success(usernameByPost);
+    }
+
+    @PostMapping("/invoke/top")
+    @AuthCheck
+    public BaseResponse<List<InterfaceInfo>> invokeInterfaceTop(HttpServletRequest request) {
+        List<InterfaceInfo> list = interfaceInfoService.list(new QueryWrapper<>());
+        return ReturnUtil.success(list);
     }
 
 }

@@ -21,7 +21,7 @@ public class CurrentUserUtil {
      * 从缓存中得到当前登录用户的完整信息
      *
      * @param request 请求信息
-     * @return 完整的用户信息
+     * @return 返回完整的用户信息
      */
     public static User getCurrentUser(HttpServletRequest request) {
         if (request == null) {

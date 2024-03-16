@@ -3,7 +3,6 @@ package com.wen.wenapiproject.service.impl;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wen.wenapicommon.common.BaseCode;
 import com.wen.wenapicommon.constant.UserConstant;
@@ -14,8 +13,10 @@ import com.wen.wenapicommon.model.request.user.UserRegisterRequest;
 import com.wen.wenapicommon.model.request.user.UserSearchRequest;
 import com.wen.wenapicommon.model.request.user.UserUpdateRequest;
 import com.wen.wenapiproject.mapper.UserMapper;
+import com.wen.wenapiproject.model.vo.ApiKeyVO;
 import com.wen.wenapiproject.model.vo.SafetyUserVO;
 import com.wen.wenapiproject.service.UserService;
+import com.wen.wenapiproject.util.ApiKey;
 import com.wen.wenapiproject.util.CurrentUserUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +38,7 @@ import java.util.*;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
+    public static final String USER_ACCOUNT = "user_account";
     @Resource
     private UserMapper userMapper;
 
@@ -67,7 +69,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 2.账号校验
         // 不能重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_account", userAccount);
+        queryWrapper.eq(USER_ACCOUNT, userAccount);
         long count = userMapper.selectCount(queryWrapper);
         if (count > 0) {
             throw new BusinessException(BaseCode.PARAMS_ERROR, "账号已经存在");
@@ -88,18 +90,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserPassword(encryptPassword);
         user.setUserAccount(userAccount);
         // 初始化密钥
-        String accessKey = DigestUtil.md5Hex(UserConstant.SALT + userAccount + RandomUtil.randomNumbers(5));
-        String secretKey = DigestUtil.md5Hex(userAccount + UserConstant.SALT + RandomUtil.randomNumbers(8));
-        user.setAccessKey(accessKey);
-        user.setSecretKey(secretKey);
-        // 设置初始头像和初始标签
+        ApiKeyVO apiKey = ApiKey.getApiKey(userAccount);
+        user.setAccessKey(apiKey.getAccessKey());
+        user.setSecretKey(apiKey.getSecretKey());
+        // 设置初始头像和初始用户名
         user.setAvatarUrl("https://img1.baidu.com/it/u=2985396150,1670050748&fm=253&app=120&size=w931&n=0&f=JPEG&fmt=auto?sec=1710003600&t=5293756f92c3a6922e0540ee28503bfd");
-        user.setTags("[\"开心\"]");
+        user.setUsername(userAccount);
         boolean res = this.save(user);
         if (!res) {
             throw new BusinessException(BaseCode.PARAMS_ERROR, "注册失败");
         }
-
         return user.getId();
     }
 
@@ -111,7 +111,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 返回脱敏的用户信息
      */
     @Override
-    public User userLogin(UserLoginRequest userLoginRequest, HttpServletRequest request) {
+    public SafetyUserVO userLogin(UserLoginRequest userLoginRequest, HttpServletRequest request) {
         // 校验登陆参数是否为空
         if (userLoginRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
@@ -132,7 +132,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         //数据库查询是否有账号
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_account", userAccount);
+        queryWrapper.eq(USER_ACCOUNT, userAccount);
         User user = userMapper.selectOne(queryWrapper);
         if (user == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "账号不存在");
@@ -142,11 +142,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!user.getUserPassword().equals(encryptPassword)) {
             throw new BusinessException(BaseCode.INVALID_PASSWORD_ERROR, "密码错误");
         }
-        // 3.返回脱敏后的用户信息
-        User safetyUser = getSafetyUser(user);
-        // 4.记录用户登录态
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATUS, safetyUser);
-        return safetyUser;
+        // 3.记录用户登录态
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATUS, user);
+        // 4.返回脱敏后的用户信息
+        return getSafetyUser(user);
     }
 
     /**
@@ -156,7 +155,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 返回脱敏的用户信息
      */
     @Override
-    public User getCurrentUser(HttpServletRequest request) {
+    public SafetyUserVO getCurrentUser(HttpServletRequest request) {
         if (request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "请求信息为空");
         }
@@ -176,52 +175,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
-     * 判断是否是管理员（前端请求）
-     *
-     * @param request Http请求
-     * @return 是否是管理员
-     */
-    @Override
-    public boolean isAdmin(HttpServletRequest request) {
-        if (request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        User user = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATUS);
-        if (user == null) {
-            throw new BusinessException(BaseCode.AUTH_FAILURE, "未登录或登陆过期");
-        }
-        return user.getUserRole() == UserConstant.ADMIN_ROLE;
-    }
-
-    /**
-     * 判断用户是否为管理员（当前用户）
-     *
-     * @param currentUser 当前用户
-     * @return 是否是管理员
-     */
-    @Override
-    public boolean isAdmin(User currentUser) {
-        return currentUser != null && currentUser.getUserRole() == UserConstant.ADMIN_ROLE;
-    }
-
-
-    /**
      * 查询用户实现类
      *
      * @param userSearchRequest 用户查询请求体
      * @return 返回脱敏的用户信息
      */
     @Override
-    public List<User> userSearch(UserSearchRequest userSearchRequest) {
+    public List<SafetyUserVO> userSearch(UserSearchRequest userSearchRequest) {
         if (userSearchRequest == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
-        List<User> safetyUsers = new ArrayList<>();
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         // 根据信息查询,如果信息全部为空，返回所有用户列表
         String userAccount = userSearchRequest.getUserAccount();
         if (userAccount != null) {
-            queryWrapper.eq("user_account", userAccount);
+            queryWrapper.eq(USER_ACCOUNT, userAccount);
         }
         Integer userRole = userSearchRequest.getUserRole();
         if (userRole != null) {
@@ -253,10 +221,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         List<User> users = userMapper.selectList(queryWrapper);
         // 用户信息脱敏
-        for (User user : users) {
-            safetyUsers.add(getSafetyUser(user));
-        }
-        return safetyUsers;
+        return getSafetyUser(users);
     }
 
     /**
@@ -272,12 +237,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (userUpdateRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_ERROR);
         }
-        // 得到当前用户的登录态
-        User currentUser = getCurrentUser(request);
-        // 判断是否为管理员 或者 要修改的用户就是当前登录用户
-        if (!isAdmin(currentUser) && currentUser.getId().equals(userUpdateRequest.getId())) {
-            throw new BusinessException(BaseCode.ACCESS_DENIED, "非管理员用户或要修改的不是当前登录用户");
-        }
         // 查询要修改的用户在数据库中是否存在
         User oldUser = userMapper.selectById(userUpdateRequest.getId());
         if (oldUser == null || oldUser.getIsDelete() == UserConstant.USER_DELETED) {
@@ -291,24 +250,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     /**
      * 用户脱敏的实现
      *
-     * @param userPageList 分页的用户列表
-     * @return 脱敏的用户分页列表
-     */
-    @Override
-    public List<User> getSafetyUser(Page<User> userPageList) {
-        List<User> userListRecords = userPageList.getRecords();
-        return getSafetyUser(userListRecords);
-    }
-
-    /**
-     * 用户脱敏的实现
-     *
      * @param userList 用户列表
      * @return 脱敏的用户信息
      */
     @Override
-    public List<User> getSafetyUser(List<User> userList) {
-        List<User> safetyUserList = new ArrayList<>();
+    public List<SafetyUserVO> getSafetyUser(List<User> userList) {
+        if (userList == null) {
+            return new ArrayList<>();
+        }
+        List<SafetyUserVO> safetyUserList = new ArrayList<>();
         for (User userListRecord : userList) {
             safetyUserList.add(getSafetyUser(userListRecord));
         }
@@ -322,15 +272,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 脱敏的用户
      */
     @Override
-    public User getSafetyUser(User originUser) {
+    public SafetyUserVO getSafetyUser(User originUser) {
         if (originUser == null) {
             return null;
         }
         SafetyUserVO safetyUserVO = new SafetyUserVO();
         BeanUtils.copyProperties(originUser, safetyUserVO);
-        User safetyUser = new User();
-        BeanUtils.copyProperties(safetyUserVO, safetyUser);
-        return safetyUser;
+        return safetyUserVO;
     }
 }
 

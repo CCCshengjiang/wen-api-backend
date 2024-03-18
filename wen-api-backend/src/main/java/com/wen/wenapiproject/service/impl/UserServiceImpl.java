@@ -1,7 +1,5 @@
 package com.wen.wenapiproject.service.impl;
 
-import cn.hutool.core.util.RandomUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wen.wenapicommon.common.BaseCode;
@@ -49,7 +47,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 返回注册的用户id
      */
     @Override
-    public Long userRegister(UserRegisterRequest userRegisterRequest) {
+    public SafetyUserVO userRegister(UserRegisterRequest userRegisterRequest, HttpServletRequest request) {
         // 校验输入是否为空
         if (userRegisterRequest == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "注册输入参数为空");
@@ -100,7 +98,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!res) {
             throw new BusinessException(BaseCode.PARAMS_ERROR, "注册失败");
         }
-        return user.getId();
+        // 注册完之后，自动登录
+        UserLoginRequest userLoginRequest = new UserLoginRequest();
+        userLoginRequest.setUserAccount(userAccount);
+        userLoginRequest.setUserPassword(userPassword);
+        return this.userLogin(userLoginRequest, request);
     }
 
     /**
@@ -143,7 +145,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(BaseCode.INVALID_PASSWORD_ERROR, "密码错误");
         }
         // 3.记录用户登录态
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATUS, user);
+        CurrentUserUtil.saveUserInSession(user, request);
         // 4.返回脱敏后的用户信息
         return getSafetyUser(user);
     }
@@ -244,7 +246,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         User updateUser = new User();
         BeanUtils.copyProperties(userUpdateRequest, updateUser);
-        return userMapper.updateById(updateUser);
+        int res = userMapper.updateById(updateUser);
+        if (res <= 0) {
+            throw new BusinessException(BaseCode.INTERNAL_ERROR, "用户信息更新失败");
+        }
+        // 将 Session 中的用户信息也更新
+        CurrentUserUtil.saveUserInSession(updateUser, request);
+        return res;
     }
 
     /**

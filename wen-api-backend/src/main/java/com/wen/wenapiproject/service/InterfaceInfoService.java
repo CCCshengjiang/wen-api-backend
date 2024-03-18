@@ -3,7 +3,10 @@ package com.wen.wenapiproject.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
+import com.wen.wenapiproject.model.vo.InterfaceTopVO;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 /**
  * 针对表【interface_info(接口信息表)】的数据库操作Service

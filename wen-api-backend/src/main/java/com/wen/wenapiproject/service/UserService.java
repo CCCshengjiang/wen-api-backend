@@ -24,7 +24,7 @@ public interface UserService extends IService<User> {
      * @param userRegisterRequest 前端输入的注册信息
      * @return 返回注册的用户id
      */
-    Long userRegister(UserRegisterRequest userRegisterRequest);
+    SafetyUserVO userRegister(UserRegisterRequest userRegisterRequest, HttpServletRequest request);
 
     /**
      * 用户登陆的业务层接口

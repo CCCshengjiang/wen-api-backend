@@ -8,10 +8,14 @@ import com.wen.wenapicommon.common.request.DeleteRequest;
 import com.wen.wenapicommon.common.request.IdRequest;
 import com.wen.wenapicommon.common.utils.ReturnUtil;
 import com.wen.wenapicommon.exception.BusinessException;
+import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.domain.UserInterfaceInfo;
 import com.wen.wenapicommon.model.request.userinterface.UserInterfaceAddRequest;
 import com.wen.wenapicommon.model.request.userinterface.UserInterfaceSearchRequest;
 import com.wen.wenapicommon.model.request.userinterface.UserInterfaceUpdateRequest;
+import com.wen.wenapiproject.annotation.AuthCheck;
+import com.wen.wenapiproject.model.vo.InterfaceTopVO;
+import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiproject.service.UserInterfaceInfoService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +23,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,125 +37,26 @@ public class UserInterfaceInfoController {
     @Resource
     private UserInterfaceInfoService userInterfaceInfoService;
 
-    /**
-     * 添加用户-接口信息
-     *
-     * @param userInterfaceAddRequest 请求参数
-     * @param request             请求信息
-     * @return 添加后的 id
-     */
-    @PostMapping("/add")
-    public BaseResponse<Long> addUserInterface(@RequestBody UserInterfaceAddRequest userInterfaceAddRequest, HttpServletRequest request) {
-        if (userInterfaceAddRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        UserInterfaceInfo userInterfaceInfo = new UserInterfaceInfo();
-        BeanUtils.copyProperties(userInterfaceAddRequest, userInterfaceInfo);
+    @Resource
+    private InterfaceInfoService interfaceInfoService;
 
-        boolean res = userInterfaceInfoService.save(userInterfaceInfo);
-        if (!res) {
-            throw new BusinessException(BaseCode.INTERNAL_ERROR);
+    @PostMapping("/invoke/top")
+    @AuthCheck
+    public BaseResponse<List<InterfaceTopVO>> invokeInterfaceTop(HttpServletRequest request) {
+        QueryWrapper<UserInterfaceInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.groupBy("interface_id")
+                .select("interface_id", "SUM(total_num) as total_num");
+        List<InterfaceTopVO> interfaceTopVOList = new ArrayList<>();
+        List<UserInterfaceInfo> list = userInterfaceInfoService.list(queryWrapper);
+        InterfaceTopVO interfaceTopVO;
+        for (UserInterfaceInfo userInterfaceInfo : list) {
+            interfaceTopVO = new InterfaceTopVO();
+            InterfaceInfo interfaceInfo = interfaceInfoService.getById(userInterfaceInfo.getInterfaceId());
+            interfaceTopVO.setInterfaceName(interfaceInfo.getInterfaceName());
+            interfaceTopVO.setInvokeNum(userInterfaceInfo.getTotalNum());
+            interfaceTopVOList.add(interfaceTopVO);
         }
-        return ReturnUtil.success(userInterfaceInfo.getId());
-    }
-
-    /**
-     * 删除接口
-     *
-     * @param deleteRequest 请求参数
-     * @param request       请求信息
-     * @return 是否删除成功
-     */
-    @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteUserInterface(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
-        if (deleteRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        return ReturnUtil.success(userInterfaceInfoService.removeById(deleteRequest.getId()));
-    }
-
-    /**
-     * 更新接口信息
-     *
-     * @param userInterfaceUpdateRequest 请求参数
-     * @param request                请求信息
-     * @return 是否更新成功
-     */
-    @PostMapping("/update")
-    public BaseResponse<Boolean> updateUserInterface(@RequestBody UserInterfaceUpdateRequest userInterfaceUpdateRequest, HttpServletRequest request) {
-        if (userInterfaceUpdateRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        UserInterfaceInfo userInterfaceInfo = new UserInterfaceInfo();
-        BeanUtils.copyProperties(userInterfaceUpdateRequest, userInterfaceInfo);
-        boolean res = userInterfaceInfoService.updateById(userInterfaceInfo);
-        if (!res) {
-            throw new BusinessException(BaseCode.PARAMS_ERROR, "查询接口失败");
-        }
-        return ReturnUtil.success(true);
-    }
-
-    /**
-     * 查询接口
-     *
-     * @param userInterfaceSearchRequest 请求参数
-     * @param request                请求信息
-     * @return 接口列表
-     */
-    @GetMapping("/search")
-    public BaseResponse<List<UserInterfaceInfo>> searchUserInterface(UserInterfaceSearchRequest userInterfaceSearchRequest, HttpServletRequest request) {
-        if (userInterfaceSearchRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        QueryWrapper<UserInterfaceInfo> interfaceInfoQueryWrapper = new QueryWrapper<>();
-        Long id = userInterfaceSearchRequest.getId();
-        if (id != null) {
-            interfaceInfoQueryWrapper.eq("id", id);
-        }
-        Long interfaceId = userInterfaceSearchRequest.getInterfaceId();
-        if (interfaceId != null) {
-            interfaceInfoQueryWrapper.like("interface_id", interfaceId);
-        }
-        Long userId = userInterfaceSearchRequest.getUserId();
-        if (userId != null) {
-            interfaceInfoQueryWrapper.like("user_Id", userId);
-        }
-        Integer totalNum = userInterfaceSearchRequest.getTotalNum();
-        if (totalNum != null) {
-            interfaceInfoQueryWrapper.like("total_num", totalNum);
-        }
-        Integer balanceNum = userInterfaceSearchRequest.getBalanceNum();
-        if (balanceNum != null) {
-            interfaceInfoQueryWrapper.eq("balance_num", balanceNum);
-        }
-        Integer userInterfaceStatus = userInterfaceSearchRequest.getUserInterfaceStatus();
-        if (userInterfaceStatus != null) {
-            interfaceInfoQueryWrapper.eq("method", userInterfaceStatus);
-        }
-        List<UserInterfaceInfo> userInterfaceInfoList = userInterfaceInfoService.list(interfaceInfoQueryWrapper);
-        return ReturnUtil.success(userInterfaceInfoList);
-    }
-
-    @GetMapping("/list")
-    public BaseResponse<Page<UserInterfaceInfo>> listUserInterfaceByPage(PageRequest pageRequest, HttpServletRequest request) {
-        int pageNum = pageRequest.getPageNumber();
-        int pageSize = pageRequest.getPageSize();
-        Page<UserInterfaceInfo> interfaceInfoList = userInterfaceInfoService.page(new Page<>(pageNum, pageSize));
-        return ReturnUtil.success(interfaceInfoList);
-    }
-
-
-    @GetMapping("/get")
-    public BaseResponse<UserInterfaceInfo> searchUserInterfaceById(IdRequest idRequest, HttpServletRequest request) {
-        if (idRequest == null || request == null) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
-        }
-        Long id = idRequest.getId();
-        if (id == null || id < 0) {
-            throw new BusinessException(BaseCode.PARAMS_ERROR);
-        }
-        UserInterfaceInfo interfaceInfoList = userInterfaceInfoService.getById(id);
-        return ReturnUtil.success(interfaceInfoList);
+        return ReturnUtil.success(interfaceTopVOList);
     }
 
 }

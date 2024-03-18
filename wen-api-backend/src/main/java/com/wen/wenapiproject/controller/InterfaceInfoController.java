@@ -1,5 +1,6 @@
 package com.wen.wenapiproject.controller;
 
+import cn.hutool.json.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wen.wenapicommon.common.BaseCode;
@@ -17,8 +18,11 @@ import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceInvokeRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceSearchRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
 import com.wen.wenapiproject.annotation.AuthCheck;
+import com.wen.wenapiproject.model.vo.InterfaceTopVO;
 import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiclient.client.WenApiClient;
+import com.wen.wenapiproject.service.UserService;
+import com.wen.wenapiproject.util.CurrentUserUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +43,9 @@ public class InterfaceInfoController {
 
     @Resource
     private WenApiClient wenApiClient;
+
+    @Resource
+    private UserService userService;
 
     // region 增删改查
 
@@ -166,14 +173,8 @@ public class InterfaceInfoController {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
         }
         Long id = idRequest.getId();
-        if (id < 0) {
+        if (id <= 0) {
             throw new BusinessException(BaseCode.PARAMS_ERROR);
-        }
-        User user = new User();
-        user.setUsername("admin");
-        String nameByPost = wenApiClient.getUsernameByPost(user);
-        if (StringUtils.isAnyBlank(nameByPost)) {
-            throw new BusinessException(BaseCode.ACCESS_DENIED);
         }
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         interfaceInfo.setId(id);
@@ -190,6 +191,7 @@ public class InterfaceInfoController {
      * @return 是否下线成功
      */
     @PostMapping("/offline")
+    @AuthCheck
     public BaseResponse<Boolean> offlineInterface(@RequestBody IdRequest idRequest, HttpServletRequest request) {
         if (idRequest == null || request == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR);
@@ -223,25 +225,14 @@ public class InterfaceInfoController {
         if (interfaceInfo.getInterfaceStatus().equals(InterfaceConstant.INTERFACE_OFFLINE)) {
             throw new BusinessException(BaseCode.PARAMS_ERROR, "接口已关闭");
         }
-        // 签名认证
-        String userRequestParams = interfaceInvokeRequest.getUserRequestParams();
-        User currentUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATUS);
+        // 调用客户端
+        User currentUser = CurrentUserUtil.getCurrentUser(request);
         String accessKey = currentUser.getAccessKey();
         String secretKey = currentUser.getSecretKey();
         WenApiClient tempClient = new WenApiClient(accessKey, secretKey);
-        // 参数转换为 Json 格式
-        User user = new User();
-        user.setUsername(userRequestParams);
         // 向接口请求
-        String usernameByPost = tempClient.getUsernameByPost(user);
+        JSON usernameByPost = tempClient.getInvoke(interfaceInvokeRequest);
         return ReturnUtil.success(usernameByPost);
-    }
-
-    @PostMapping("/invoke/top")
-    @AuthCheck
-    public BaseResponse<List<InterfaceInfo>> invokeInterfaceTop(HttpServletRequest request) {
-        List<InterfaceInfo> list = interfaceInfoService.list(new QueryWrapper<>());
-        return ReturnUtil.success(list);
     }
 
 }

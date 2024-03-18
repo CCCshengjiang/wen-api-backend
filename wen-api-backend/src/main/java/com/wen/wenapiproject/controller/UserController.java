@@ -44,12 +44,12 @@ public class UserController {
      * @return 注册后的用户id
      */
     @PostMapping("/register")
-    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+    public BaseResponse<SafetyUserVO> userRegister(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest request) {
         if (userRegisterRequest == null) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, "输入为空");
         }
-        Long id = userService.userRegister(userRegisterRequest);
-        return ReturnUtil.success(id);
+        SafetyUserVO user = userService.userRegister(userRegisterRequest, request);
+        return ReturnUtil.success(user);
     }
 
     /**

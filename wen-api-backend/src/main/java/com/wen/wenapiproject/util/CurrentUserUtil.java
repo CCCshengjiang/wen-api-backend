@@ -35,4 +35,8 @@ public class CurrentUserUtil {
         return currentUser;
     }
 
+    public static void saveUserInSession(User currentUser, HttpServletRequest request) {
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATUS, currentUser);
+    }
+
 }

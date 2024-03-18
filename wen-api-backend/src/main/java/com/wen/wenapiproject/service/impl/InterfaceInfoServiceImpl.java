@@ -1,10 +1,13 @@
 package com.wen.wenapiproject.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wen.wenapicommon.common.BaseCode;
 import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.InterfaceInfo;
+import com.wen.wenapicommon.model.domain.UserInterfaceInfo;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
+import com.wen.wenapiproject.model.vo.InterfaceTopVO;
 import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiproject.mapper.InterfaceInfoMapper;
 import jakarta.annotation.Resource;
@@ -12,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * 针对表【interface_info(接口信息表)】的数据库操作Service实现
@@ -52,10 +57,6 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
         if (StringUtils.isAnyBlank(interfaceMethod)) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, " 请求类型不能为空");
         }
-        String requestParams = interfaceUpdateRequest.getRequestParams();
-        if (StringUtils.isAnyBlank(requestParams)) {
-            throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, " 请求参数不能为空");
-        }
         String requestHeader = interfaceUpdateRequest.getRequestHeader();
         if (StringUtils.isAnyBlank(requestHeader)) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, " 请求头不能为空");
@@ -73,6 +74,7 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
         }
         return true;
     }
+
 }
 
 

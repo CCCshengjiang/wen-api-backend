@@ -23,6 +23,16 @@ public class InterfaceInvokeRequest implements Serializable {
      */
     private String userRequestParams;
 
+    /**
+     * 请求地址
+     */
+    private String interfaceUrl;
+
+    /**
+     * 请求方法
+     */
+    private String interfaceMethod;
+
 
     @Serial
     private static final long serialVersionUID = 2594776101186210235L;

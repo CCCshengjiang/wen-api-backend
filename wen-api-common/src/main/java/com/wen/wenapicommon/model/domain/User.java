@@ -77,11 +77,6 @@ public class User implements Serializable {
     private Integer userRole;
 
     /**
-     * 用户自我介绍
-     */
-    private String userProfile;
-
-    /**
      * 标识签名
      */
     private String accessKey;

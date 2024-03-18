@@ -24,10 +24,12 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -64,7 +66,8 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         log.info("服务器的 IP 地址：" + request.getLocalAddress());
         String remoteAddress = Objects.requireNonNull(request.getRemoteAddress()).getHostString();
         log.info("客户端的主机号：" + remoteAddress);
-        log.info("请求参数：" + request.getQueryParams());
+        MultiValueMap<String, String> queryParams = request.getQueryParams();
+        log.info("请求参数：" + queryParams);
         //  2. 黑白名单
         ServerHttpResponse response = exchange.getResponse();
         if (!IP_WHITE_LIST.contains(remoteAddress)) {
@@ -74,7 +77,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         // 从请求头中获取参数信息,先判断 aK 和 sK
         HttpHeaders headers = request.getHeaders();
         String accessKey = headers.getFirst("accessKey");
-        User invokeUser = null;
+        User invokeUser;
         try {
             invokeUser = userService.getInvokeUser(accessKey);
         } catch (Exception e) {
@@ -99,7 +102,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             return handleNoAuth(response);
         }
         //  4. 请求的模拟接口是否存在
-        InterfaceInfo interfaceInfo = null;
+        InterfaceInfo interfaceInfo;
         try {
             interfaceInfo = interfaceInfoService.getInterfaceInfo(url, method);
         } catch (Exception e) {

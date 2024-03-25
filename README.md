@@ -23,9 +23,7 @@ src="https://wen-api.cwblue.cn/imag/wen-api.png" alt="logo"></a>
 
 > 在线访问：https://wen-api.cwblue.cn
 
-WEN-API 接口开放平台是基于 React + Spring Boot + Dubbo + Gateway 的 API 接口开放调用平台。管理员可以修改接口信
-
-息、可视化各接口调用情况；用户可以开通接口调用权限、浏览接口及在线调试，可以通过多种方式使用客户端 SDK 轻松调用接口。
+WEN-API 接口开放平台是基于 React + Spring Boot + Dubbo + Gateway 的 API 接口开放调用平台。管理员可以修改接口信息、可视化各接口调用情况；用户可以开通接口调用权限、浏览接口及在线调试，可以通过多种方式使用客户端 SDK 轻松调用接口。
 
 客户端 SDK 具体使用方法请查看：[WEN-API 在线文档](https://api-doc.cwblue.cn/)
 

@@ -43,21 +43,7 @@ public class NameController {
      */
     @GetMapping("/love-word")
     public JSON getLoveWords() {
-        return RequestUtils.getJson("https://api.vvhan.com/api/love");
-    }
-
-    /**
-     * 天气
-     *
-     * @return 得到天气
-     */
-    @PostMapping("/weather")
-    public JSON getWeather(@RequestBody(required = false) String city) {
-        String url = "https://api.vvhan.com/api/weather";
-        if (StringUtils.isNotBlank(city)) {
-            url = url + "?city=" + city;
-        }
-        return RequestUtils.getJson(url);
+        return RequestUtils.getJson("https://api.vvhan.com/api/text/love?type=json");
     }
 
     /**
@@ -75,7 +61,14 @@ public class NameController {
         return RequestUtils.getJson(url);
     }
 
-
-
+    /**
+     * 随机头像
+     *
+     * @return JSON 格式的头像
+     */
+    @GetMapping("/avatar")
+    public JSON getAvatar() {
+        return RequestUtils.getJson("https://api.vvhan.com/api/avatar/rand?type=json");
+    }
 
 }

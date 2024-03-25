@@ -8,8 +8,3 @@ server:
   port: 8123
   servlet:
     context-path: /api
-wen:
-  api:
-    client:
-      access-key: wen-api
-      secret-key: admin

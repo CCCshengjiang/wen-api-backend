@@ -10,7 +10,6 @@ import com.wen.wenapicommon.common.request.IdRequest;
 import com.wen.wenapicommon.common.request.PageRequest;
 import com.wen.wenapicommon.common.utils.ReturnUtil;
 import com.wen.wenapicommon.constant.InterfaceConstant;
-import com.wen.wenapicommon.constant.UserConstant;
 import com.wen.wenapicommon.exception.BusinessException;
 import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.domain.User;
@@ -18,14 +17,11 @@ import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceInvokeRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceSearchRequest;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
 import com.wen.wenapiproject.annotation.AuthCheck;
-import com.wen.wenapiproject.model.vo.InterfaceTopVO;
 import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiclient.client.WenApiClient;
-import com.wen.wenapiproject.service.UserService;
 import com.wen.wenapiproject.util.CurrentUserUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,16 +32,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/interface")
 @CrossOrigin(origins = {"http://localhost:8000/"}, allowCredentials = "true")
+// @CrossOrigin(origins = { "https://wen-api.cwblue.cn/" }, allowCredentials = "true")
 public class InterfaceInfoController {
 
     @Resource
     private InterfaceInfoService interfaceInfoService;
-
-    @Resource
-    private WenApiClient wenApiClient;
-
-    @Resource
-    private UserService userService;
 
     // region 增删改查
 

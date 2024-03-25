@@ -32,6 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/user")
 @CrossOrigin(origins = { "http://localhost:8000/" }, allowCredentials = "true")
+// @CrossOrigin(origins = { "https://wen-api.cwblue.cn/" }, allowCredentials = "true")
 public class UserController {
 
     @Resource

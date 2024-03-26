@@ -1,6 +1,13 @@
 spring:
   application:
     name: wen-api-interface
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/api_interface # 自己数据库地址
+    username: root # 自己数据库用户名
+    password: 123456 # 自己数据库密码
+  session:
+    timeout: 86400
   devtools:
     livereload:
       port: 35739

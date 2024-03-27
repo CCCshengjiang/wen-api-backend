@@ -1,5 +1,6 @@
 package com.wen.wenapiinterface.service;
 
+import cn.hutool.json.JSON;
 import com.wen.wenapiinterface.domain.PoisonChickenSoup;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -9,5 +10,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author wen
  */
 public interface PoisonChickenSoupService extends IService<PoisonChickenSoup> {
+
+    /**
+     * 随机毒鸡汤
+     *
+     * @return JSON 格式
+     */
+    JSON getPoisonChickenSoup();
 
 }

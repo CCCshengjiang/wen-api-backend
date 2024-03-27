@@ -1,5 +1,6 @@
 package com.wen.wenapiinterface.service;
 
+import cn.hutool.json.JSON;
 import com.wen.wenapiinterface.domain.LoveWords;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -10,4 +11,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface LoveWordsService extends IService<LoveWords> {
 
+    /**
+     * 情话
+     *
+     * @return JSON 格式数据
+     */
+    JSON getLoveWords();
 }

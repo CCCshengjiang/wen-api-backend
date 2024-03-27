@@ -32,7 +32,7 @@ dubbo:
     name: dubbo-wen-api-backend
   protocol:
     name: dubbo
-    port: 50052
+    port: 50053
   registry:
     address: zookeeper://${zookeeper.address:127.0.0.1}:2181
 

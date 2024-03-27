@@ -16,12 +16,14 @@ import com.wen.wenapiproject.model.vo.SafetyUserVO;
 import com.wen.wenapiproject.service.UserService;
 import com.wen.wenapiproject.util.ApiKey;
 import com.wen.wenapiproject.util.CurrentUserUtil;
+import com.wen.wenapiproject.util.RedissonLockUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import java.util.*;
@@ -40,6 +42,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private RedissonLockUtil redissonLockUtil;
+
     /**
      * 用户注册实现类
      *
@@ -47,6 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 返回注册的用户id
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public SafetyUserVO userRegister(UserRegisterRequest userRegisterRequest, HttpServletRequest request) {
         // 校验输入是否为空
         if (userRegisterRequest == null) {
@@ -81,28 +87,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!userPassword.equals(checkPassword)) {
             throw new BusinessException(BaseCode.PARAMS_ERROR, "两次密码不同");
         }
-        // 4.对密码进行加密
-        String encryptPassword = DigestUtils.md5DigestAsHex((UserConstant.SALT + userPassword).getBytes());
-        // 5.向数据库插入用户数据
-        User user = new User();
-        user.setUserPassword(encryptPassword);
-        user.setUserAccount(userAccount);
-        // 初始化密钥
-        ApiKeyVO apiKey = ApiKey.getApiKey(userAccount);
-        user.setAccessKey(apiKey.getAccessKey());
-        user.setSecretKey(apiKey.getSecretKey());
-        // 设置初始头像和初始用户名
-        user.setAvatarUrl("https://img1.baidu.com/it/u=2985396150,1670050748&fm=253&app=120&size=w931&n=0&f=JPEG&fmt=auto?sec=1710003600&t=5293756f92c3a6922e0540ee28503bfd");
-        user.setUsername(userAccount);
-        boolean res = this.save(user);
-        if (!res) {
-            throw new BusinessException(BaseCode.PARAMS_ERROR, "注册失败");
-        }
-        // 注册完之后，自动登录
-        UserLoginRequest userLoginRequest = new UserLoginRequest();
-        userLoginRequest.setUserAccount(userAccount);
-        userLoginRequest.setUserPassword(userPassword);
-        return this.userLogin(userLoginRequest, request);
+        String lockName = ("user_register_" + userAccount).intern();
+        return redissonLockUtil.redissonDistributedLock(lockName, () -> {
+            // 4.对密码进行加密
+            String encryptPassword = DigestUtils.md5DigestAsHex((UserConstant.SALT + userPassword).getBytes());
+            // 5.向数据库插入用户数据
+            User user = new User();
+            user.setUserPassword(encryptPassword);
+            user.setUserAccount(userAccount);
+            // 初始化密钥
+            ApiKeyVO apiKey = ApiKey.getApiKey(userAccount);
+            user.setAccessKey(apiKey.getAccessKey());
+            user.setSecretKey(apiKey.getSecretKey());
+            // 设置初始头像和初始用户名
+            user.setAvatarUrl("https://img1.baidu.com/it/u=2985396150,1670050748&fm=253&app=120&size=w931&n=0&f=JPEG&fmt=auto?sec=1710003600&t=5293756f92c3a6922e0540ee28503bfd");
+            user.setUsername(userAccount);
+            boolean res = this.save(user);
+            if (!res) {
+                throw new BusinessException(BaseCode.INTERNAL_ERROR, "注册失败");
+            }
+            // 注册完之后，自动登录
+            UserLoginRequest userLoginRequest = new UserLoginRequest();
+            userLoginRequest.setUserAccount(userAccount);
+            userLoginRequest.setUserPassword(userPassword);
+            return this.userLogin(userLoginRequest, request);
+        }, BaseCode.INTERNAL_ERROR, "注册失败");
+
     }
 
     /**
@@ -234,6 +244,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 更新的用户数量
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateUser(UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
         // 判空
         if (userUpdateRequest == null || request == null) {
@@ -244,15 +255,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (oldUser == null || oldUser.getIsDelete() == UserConstant.USER_DELETED) {
             throw new BusinessException(BaseCode.RESOURCE_NOT_FOUND, "要修改的用户不存在");
         }
-        User updateUser = new User();
-        BeanUtils.copyProperties(userUpdateRequest, updateUser);
-        int res = userMapper.updateById(updateUser);
-        if (res <= 0) {
-            throw new BusinessException(BaseCode.INTERNAL_ERROR, "用户信息更新失败");
-        }
-        // 将 Session 中的用户信息也更新
-        CurrentUserUtil.saveUserInSession(updateUser, request);
-        return res;
+        String lockName = ("update_user_" + oldUser.getUserAccount()).intern();
+        return redissonLockUtil.redissonDistributedLock(lockName, () ->{
+            User updateUser = new User();
+            BeanUtils.copyProperties(userUpdateRequest, updateUser);
+            int res = userMapper.updateById(updateUser);
+            if (res <= 0) {
+                throw new BusinessException(BaseCode.INTERNAL_ERROR, "用户信息更新失败");
+            }
+            // 将 Session 中的用户信息也更新
+            CurrentUserUtil.saveUserInSession(updateUser, request);
+            return res;
+        }, BaseCode.INTERNAL_ERROR, "用户更新失败");
     }
 
     /**

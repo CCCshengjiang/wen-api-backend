@@ -22,6 +22,12 @@ public class InnerUserServiceImpl extends ServiceImpl<UserMapper, User>
     @Resource
     private UserMapper userMapper;
 
+    /**
+     * 根据 accessKey 查询用户信息
+     *
+     * @param accessKey 用户标识签名
+     * @return 用户信息
+     */
     @Override
     public User getInvokeUser(String accessKey) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();

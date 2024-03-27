@@ -7,11 +7,13 @@ import com.wen.wenapicommon.model.domain.InterfaceInfo;
 import com.wen.wenapicommon.model.request.interfaceinfo.InterfaceUpdateRequest;
 import com.wen.wenapiproject.service.InterfaceInfoService;
 import com.wen.wenapiproject.mapper.InterfaceInfoMapper;
+import com.wen.wenapiproject.util.RedissonLockUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 针对表【interface_info(接口信息表)】的数据库操作Service实现
@@ -25,6 +27,9 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
     @Resource
     private InterfaceInfoMapper interfaceInfoMapper;
 
+    @Resource
+    private RedissonLockUtil redissonLockUtil;
+
     /**
      * 更新接口信息具体实现
      *
@@ -33,6 +38,7 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
      * @return 更新成功
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateInterface(InterfaceUpdateRequest interfaceUpdateRequest, HttpServletRequest request) {
         // 得到数据库中的接口信息
         Long id = interfaceUpdateRequest.getId();
@@ -52,14 +58,17 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
         if (StringUtils.isAnyBlank(interfaceMethod)) {
             throw new BusinessException(BaseCode.PARAMS_NULL_ERROR, " 请求类型不能为空");
         }
-        // 更新接口信息
-        InterfaceInfo interfaceInfo = new InterfaceInfo();
-        BeanUtils.copyProperties(interfaceUpdateRequest, interfaceInfo);
-        int res = interfaceInfoMapper.updateById(interfaceInfo);
-        if (res <= 0) {
-            throw new BusinessException(BaseCode.INTERNAL_ERROR, "更新接口信息失败");
-        }
-        return true;
+        String lockName = ("update_interface_" + id);
+        return redissonLockUtil.redissonDistributedLock(lockName, () -> {
+            // 更新接口信息
+            InterfaceInfo interfaceInfo = new InterfaceInfo();
+            BeanUtils.copyProperties(interfaceUpdateRequest, interfaceInfo);
+            int res = interfaceInfoMapper.updateById(interfaceInfo);
+            if (res <= 0) {
+                throw new BusinessException(BaseCode.INTERNAL_ERROR, "更新接口信息失败");
+            }
+            return true;
+        }, BaseCode.INTERNAL_ERROR, "接口信息更新失败");
     }
 
 }
